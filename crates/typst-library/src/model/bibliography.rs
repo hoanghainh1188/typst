@@ -1093,18 +1093,36 @@ fn render<'a>(
 
     if let Some(offset) = offset
         && let Some(bib) = &rendered.bibliography
-        // Check whether the style uses numbering.
-        && rendered.citations.iter().any(|rendered| {
+        // Check whether the style uses numbering. Citations may all be
+        // hidden (or absent), so also look at the bibliography itself.
+        && (rendered.citations.iter().any(|rendered| {
             rendered
                 .citation
                 .find_meta(&hayagriva::ElemMeta::CitationNumber)
                 .is_some()
-        })
+        }) || bib.items.iter().any(|item| {
+            item.first_field.as_ref().is_some_and(child_has_number)
+                || item
+                    .content
+                    .find_meta(&hayagriva::ElemMeta::CitationNumber)
+                    .is_some()
+        }))
     {
         *offset += bib.items.len();
     }
 
     rendered
+}
+
+/// Whether a rendered element child is or contains a citation number.
+fn child_has_number(child: &hayagriva::ElemChild) -> bool {
+    match child {
+        hayagriva::ElemChild::Elem(elem) => {
+            matches!(elem.meta, Some(hayagriva::ElemMeta::CitationNumber))
+                || elem.children.0.iter().any(child_has_number)
+        }
+        _ => false,
+    }
 }
 
 /// Creates a hayagriva citation item for a citation element.
