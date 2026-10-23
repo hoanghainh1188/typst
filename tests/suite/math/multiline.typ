@@ -221,3 +221,17 @@ $ x := "a\nb\nc\nd\ne" $
 
 $ a + b \
   a + b $
+
+--- issue-8560-math-align-in-delimiters paged empty ---
+// Alignment points inside delimiters on a single line must be respected.
+#context {
+  let tolerance = measure($x$).width / 2
+  for (aligned, plain) in (
+    ($& x \ (& x)$, $(x)$),
+    ($& x \ [& x]$, $[x]$),
+    ($& x \ {& x}$, ${x}$),
+    ($& x \ abs(& x)$, $abs(x)$),
+  ) {
+    assert(measure(aligned).width < measure(plain).width + tolerance)
+  }
+}

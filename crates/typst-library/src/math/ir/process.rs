@@ -23,7 +23,9 @@ pub(crate) enum GroupResult<'a> {
 ///
 /// The `closing` parameter indicates whether a closing delimiter follows the
 /// items. The `pad` parameter indicates whether, when linebreaks are present,
-/// the resulting rows should be padded to have the same length.
+/// the resulting rows should be padded to have the same length. When `pad` is
+/// false (as for the body of a fence), alignment points are also preserved
+/// in the absence of linebreaks, giving a single multiline row.
 pub(crate) fn process_group<'a, I>(
     items: I,
     styles: StyleChain<'a>,
@@ -35,7 +37,10 @@ where
     I::IntoIter: ExactSizeIterator,
 {
     let preprocessed = preprocess(items, closing, false);
-    if preprocessed.linebreaks > 0 {
+    // Without padding (i.e. for the body of a fence), alignment points must be
+    // preserved even in the absence of linebreaks, so that the fence can be
+    // split at them and aligned with surrounding rows.
+    if preprocessed.linebreaks > 0 || (preprocessed.has_align && !pad) {
         let mut row = Vec::new();
         let mut rows: Vec<_> = preprocessed
             .items
