@@ -255,6 +255,24 @@ fn test_target_available() {
     exec().arg("compile").arg(&main).must_succeed();
 }
 
+#[test]
+fn test_compile_svg_link_escapes_ampersand() {
+    let project = tempfs();
+    let main = project.write(
+        "main.typ",
+        r#"#link("https://example.com/files?page=1&status=active")[Link]"#,
+    );
+    exec()
+        .arg("compile")
+        .arg("--format")
+        .arg("svg")
+        .arg(&main)
+        .must_succeed();
+    project
+        .read("main.svg")
+        .must_contain("href=\"https://example.com/files?page=1&amp;status=active\"");
+}
+
 /// Executes a command with the Typst CLI.
 fn exec() -> Command {
     Command::new(env!("CARGO_BIN_EXE_typst"))

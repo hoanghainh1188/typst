@@ -151,7 +151,16 @@ impl<'a, T> SvgFormatter<'a, T> {
 
 impl SvgWrite for SvgFormatter<'_, Vec<u8>> {
     fn push_str(&mut self, value: &str) {
-        self.buf.extend_from_slice(value.as_bytes());
+        // Attribute values are written raw by `xmlwriter`, which only escapes
+        // quotes, so we need to escape the XML special characters here.
+        for &byte in value.as_bytes() {
+            match byte {
+                b'&' => self.buf.extend_from_slice(b"&amp;"),
+                b'<' => self.buf.extend_from_slice(b"&lt;"),
+                b'>' => self.buf.extend_from_slice(b"&gt;"),
+                _ => self.buf.push(byte),
+            }
+        }
     }
 }
 
