@@ -15,6 +15,13 @@
 #test(stroke(cap: "round").thickness, auto)
 #test(stroke(cap: "round", thickness: auto).thickness, auto)
 
+--- stroke-repr-round-trip eval ---
+#test(repr(stroke()), "stroke()")
+#test(eval(repr(stroke())), stroke())
+#test(stroke(eval(repr(stroke(red)))), stroke(red))
+#test(stroke(eval(repr(stroke(2pt)))), stroke(2pt))
+#test(eval(repr(2pt + red)), 2pt + red)
+
 --- stroke-constructor-unknown-key eval ---
 // Error: 9-21 unexpected key "foo", valid keys are "paint", "thickness", "cap", "join", "dash", and "miter-limit"
 #stroke((foo: "bar"))
