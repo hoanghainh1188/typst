@@ -509,9 +509,15 @@ const BIBLIOGRAPHY_RULE: ShowFn<BibliographyElem> = |elem, engine, styles| {
             let realized =
                 PdfMarkerTag::BibEntry(entry.body.clone().located(entry.backlink));
             let block = if bibliography.hanging_indent {
-                let body = HElem::new((-INDENT).into()).pack() + realized;
+                // Respect a hanging indent configured by the user through
+                // `par`, falling back to the default indent otherwise. Entries
+                // are not paragraphs, so the indent is applied manually.
+                let indent = styles.get(ParElem::hanging_indent);
+                let indent: Length =
+                    if indent.is_zero() { INDENT.into() } else { indent };
+                let body = HElem::new((-indent).into()).pack() + realized;
                 let inset = Sides::default()
-                    .with(styles.resolve(TextElem::dir).start(), Some(INDENT.into()));
+                    .with(styles.resolve(TextElem::dir).start(), Some(indent.into()));
                 BlockElem::new()
                     .with_inset(inset)
                     .with_body(Some(BlockBody::Content(body)))

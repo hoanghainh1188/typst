@@ -98,6 +98,34 @@ hi:
 
 #bibliography("/assets/bib/works_too.bib", style: "mla")
 
+--- bibliography-hanging-indent-par paged empty ---
+// Test that a user-defined paragraph hanging indent is respected by styles
+// with a CSL-defined hanging indent (issue 2639). The page is hidden, but the
+// position of the wrapped words is checked.
+#let src = ```yaml
+x:
+  type: Book
+  title: Alpha Beta Gamma Delta Epsilon
+  author: Doe, Jane
+  date: 2000
+```
+
+#place(hide(block(width: 50pt)[
+  #set text(size: 10pt)
+  #set par(first-line-indent: 0pt, hanging-indent: 40pt)
+  #show "Gamma": it => box[#metadata(none)<gamma>#it]
+  #block(height: 0pt) <origin>
+  @x
+  #bibliography(bytes(src.text), style: "mla", title: none)
+]))
+
+#context {
+  let origin = locate(<origin>).position()
+  let gamma = locate(<gamma>).position()
+  let dx = gamma.x - origin.x
+  assert(calc.abs(dx - 40pt) < 0.1pt, message: "offset was " + repr(dx))
+}
+
 --- bibliography-style-not-suitable paged ---
 // Error: 2-62 CSL style "Alphanumeric" is not suitable for bibliographies
 #bibliography("/assets/bib/works.bib", style: "alphanumeric")
