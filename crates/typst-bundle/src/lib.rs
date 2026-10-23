@@ -303,14 +303,17 @@ fn compile_document<'a>(
                 styles,
             )?;
 
+            // This error is delayed because the document may have more pages
+            // in earlier iterations than in the final one (e.g. because
+            // introspection results are not yet available).
             let num_pages = doc.pages().len();
             if num_pages != 1 && matches!(format, PagedFormat::Png | PagedFormat::Svg) {
-                bail!(
+                engine.sink.delayed_error(error!(
                     document.span(),
                     "expected document to have a single page";
                     hint: "the document resulted in {num_pages} pages";
                     hint: "documents exported to an image format only support a single page";
-                );
+                ));
             }
 
             BundleDocument::Paged(

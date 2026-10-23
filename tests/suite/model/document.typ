@@ -114,6 +114,25 @@ Hello
 // Hint: 2-30 documents exported to an image format only support a single page
 #document("image.png", multi)
 
+--- document-image-multi-page-in-earlier-iteration bundle ---
+// The image document has two pages in the first layout iteration (because the
+// introspector is still empty), but only a single page once introspection has
+// converged. This must not result in a "single page" error.
+#document("image.png")[
+  A
+
+  #context if query(<marker>).len() == 0 { pagebreak() }
+
+  B
+
+  #metadata(none) <marker>
+]
+
+// The bundle should fail for an unrelated reason only, so that no reference
+// output is needed.
+// Error: 23-27 label `<bar>` does not exist in the document
+#document("foo.pdf", [@bar])
+
 --- document-realization-errors bundle ---
 // This test ensures that we show errors from all document realizations at once.
 
