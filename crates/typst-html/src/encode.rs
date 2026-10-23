@@ -302,9 +302,9 @@ fn find_closing_tag(text: &str, tag: HtmlTag) -> Option<&str> {
     let len = s.len();
     text.match_indices("</").find_map(|(i, _)| {
         let rest = &text[i + 2..];
-        let disallowed = rest.len() >= len
-            && rest[..len].eq_ignore_ascii_case(&s)
-            && rest[len..].starts_with(['\t', '\n', '\u{c}', '\r', ' ', '>', '/']);
+        let disallowed =
+            rest.get(..len).is_some_and(|head| head.eq_ignore_ascii_case(&s))
+                && rest[len..].starts_with(['\t', '\n', '\u{c}', '\r', ' ', '>', '/']);
         disallowed.then(|| &text[i..i + 2 + len])
     })
 }
@@ -419,5 +419,17 @@ fn write_frame(w: &mut Writer, frame: &HtmlFrame) {
         }
     } else {
         w.buf.push_str(&svg);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_closing_tag_multibyte_after_open() {
+        assert_eq!(find_closing_tag("</abcd−", tag::style), None);
+        assert_eq!(find_closing_tag("</−", tag::style), None);
+        assert_eq!(find_closing_tag("a </STYLE>", tag::style), Some("</STYLE"));
     }
 }

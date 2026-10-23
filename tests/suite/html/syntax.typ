@@ -227,6 +227,12 @@ A #html.br() B
 // Hint: 2-32 the sequence `</SCRiPT` appears in the raw text
 #html.script("hello </SCRiPT ")
 
+--- html-raw-text-multibyte-after-closing-tag-start html ---
+// Test that a multi-byte character after `</` does not panic.
+// Error: 2-32 HTML raw text element cannot contain its own closing tag
+// Hint: 2-32 the sequence `</style` appears in the raw text
+#html.style("</abcd− </style>")
+
 --- html-escapable-raw-text-contains-elem html ---
 // Error: 16-34 HTML raw text element cannot have non-text children
 #html.textarea(html.strong[Hello])
