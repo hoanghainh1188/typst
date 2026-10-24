@@ -38,6 +38,9 @@ pub fn collect<'a>(
     expand: bool,
     mode: FlowMode,
 ) -> SourceResult<Vec<Child<'a>>> {
+    // Introspection tags take up no space, so a block that is only surrounded
+    // by tags (e.g. because it is locatable) still counts as being alone.
+    let alone = children.iter().filter(|(child, _)| !child.is::<TagElem>()).count() == 1;
     Collector {
         engine,
         bump,
@@ -45,6 +48,7 @@ pub fn collect<'a>(
         locator: locator.split(),
         base,
         expand,
+        alone,
         output: Vec::with_capacity(children.len()),
         par_situation: ParSituation::First,
     }
@@ -58,6 +62,8 @@ struct Collector<'a, 'x, 'y> {
     children: &'x [Pair<'a>],
     base: Size,
     expand: bool,
+    /// Whether there is exactly one child that is not an introspection tag.
+    alone: bool,
     locator: SplitLocator<'a>,
     output: Vec<Child<'a>>,
     par_situation: ParSituation,
@@ -234,7 +240,7 @@ impl<'a> Collector<'a, '_, '_> {
     fn block(&mut self, elem: &'a Packed<BlockElem>, styles: StyleChain<'a>) {
         let locator = self.locator.next(&elem.span());
         let align = styles.resolve(AlignElem::alignment);
-        let alone = self.children.len() == 1;
+        let alone = self.alone;
         let sticky = elem.sticky.get(styles);
         let breakable = elem.breakable.get(styles);
         let fr = match elem.height.get(styles) {
