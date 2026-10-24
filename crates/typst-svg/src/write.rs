@@ -150,8 +150,17 @@ impl<'a, T> SvgFormatter<'a, T> {
 }
 
 impl SvgWrite for SvgFormatter<'_, Vec<u8>> {
+    /// Writes an attribute value fragment, escaping XML special characters.
     fn push_str(&mut self, value: &str) {
-        self.buf.extend_from_slice(value.as_bytes());
+        for &byte in value.as_bytes() {
+            match byte {
+                b'&' => self.buf.extend_from_slice(b"&amp;"),
+                b'<' => self.buf.extend_from_slice(b"&lt;"),
+                b'>' => self.buf.extend_from_slice(b"&gt;"),
+                b'"' => self.buf.extend_from_slice(b"&quot;"),
+                _ => self.buf.push(byte),
+            }
+        }
     }
 }
 
