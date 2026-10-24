@@ -588,8 +588,13 @@ impl<'a> ItemLayouter<'a> {
         let mut frames = vec![];
         for (i, body_frame) in body_fragment.into_iter().enumerate() {
             let width = self.body_offset.x + body_frame.width();
-            let height = (marker.height() + self.marker_offset.y)
-                .max(body_frame.height() + self.body_offset.y);
+            // Only the frame containing the marker must be at least as tall as
+            // the marker. Otherwise, a marker stretched to the height of the
+            // first body frame would inflate all the other frames, too.
+            let mut height = body_frame.height() + self.body_offset.y;
+            if i == self.first_frame {
+                height.set_max(marker.height() + self.marker_offset.y);
+            }
 
             let mut frame = Frame::soft(Size::new(width, height));
 
