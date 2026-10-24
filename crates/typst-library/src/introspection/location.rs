@@ -10,7 +10,7 @@ use crate::diag::{SourceDiagnostic, warning};
 use crate::engine::Engine;
 use crate::foundations::{Content, IntoValue, Repr, Selector, func, repr, scope, ty};
 use crate::introspection::{
-    DocumentPosition, History, Introspect, Introspector, PagedPosition,
+    DocumentPosition, History, InnerHtmlPosition, Introspect, Introspector, PagedPosition,
 };
 use crate::layout::Abs;
 use crate::model::Numbering;
@@ -178,8 +178,17 @@ impl Introspect for PositionIntrospection {
     ) -> Self::Output {
         match introspector.position(self.0) {
             Some(DocumentPosition::Paged(pos)) => pos,
-            // Maybe error here instead?
-            Some(DocumentPosition::Html(_)) | None => PagedPosition::ORIGIN,
+            // Inside of an HTML frame, the position is well-defined, as the
+            // frame is laid out by Typst. The frame has a single "page".
+            Some(DocumentPosition::Html(pos)) => match pos.details() {
+                Some(InnerHtmlPosition::Frame(point)) => {
+                    PagedPosition { page: NonZeroUsize::ONE, point: *point }
+                }
+                // Outside of frames, the browser determines the layout, so
+                // there is no meaningful position.
+                _ => PagedPosition::ORIGIN,
+            },
+            None => PagedPosition::ORIGIN,
         }
     }
 
