@@ -10,7 +10,7 @@ use crate::diag::{SourceDiagnostic, warning};
 use crate::engine::Engine;
 use crate::foundations::{Content, IntoValue, Repr, Selector, func, repr, scope, ty};
 use crate::introspection::{
-    DocumentPosition, History, Introspect, Introspector, PagedPosition,
+    DocumentPosition, History, InnerHtmlPosition, Introspect, Introspector, PagedPosition,
 };
 use crate::layout::Abs;
 use crate::model::Numbering;
@@ -104,6 +104,10 @@ impl Location {
     ///
     /// If you only need the page number, use `page()` instead as it allows
     /// Typst to skip unnecessary work.
+    ///
+    /// In HTML export, positions are only known inside of an @html.frame,
+    /// where they are measured from the top-left of the frame (and the page is
+    /// always `{1}`). Elsewhere, the origin of the first page is returned.
     #[func(since = "forever")]
     pub fn position(self, engine: &mut Engine, span: Span) -> PagedPosition {
         engine.introspect(PositionIntrospection(self, span))
@@ -178,8 +182,16 @@ impl Introspect for PositionIntrospection {
     ) -> Self::Output {
         match introspector.position(self.0) {
             Some(DocumentPosition::Paged(pos)) => pos,
+            // Inside of an HTML frame, the position is well-defined: It's
+            // relative to the frame's top-left corner, like on a page.
+            Some(DocumentPosition::Html(pos)) => match pos.details() {
+                Some(InnerHtmlPosition::Frame(point)) => {
+                    PagedPosition { page: NonZeroUsize::ONE, point: *point }
+                }
+                _ => PagedPosition::ORIGIN,
+            },
             // Maybe error here instead?
-            Some(DocumentPosition::Html(_)) | None => PagedPosition::ORIGIN,
+            None => PagedPosition::ORIGIN,
         }
     }
 
