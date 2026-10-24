@@ -163,7 +163,7 @@ fn draw_raster_glyph(
         upem * y_offset / raster_image.pixels_per_em as f64,
     );
     let aspect_ratio = image.width() / image.height();
-    let size = Size::new(upem, upem * aspect_ratio);
+    let size = Size::new(upem, upem / aspect_ratio);
     Some(GlyphFrameItem::Image(position, image, size))
 }
 
