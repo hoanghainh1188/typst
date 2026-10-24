@@ -234,7 +234,14 @@ impl<'a> Collector<'a, '_, '_> {
     fn block(&mut self, elem: &'a Packed<BlockElem>, styles: StyleChain<'a>) {
         let locator = self.locator.next(&elem.span());
         let align = styles.resolve(AlignElem::alignment);
-        let alone = self.children.len() == 1;
+        // Introspection tags (e.g. of a locatable element like `layout` that
+        // shows itself as a block) do not count as siblings.
+        let alone = self
+            .children
+            .iter()
+            .filter(|(child, _)| !child.is::<TagElem>())
+            .nth(1)
+            .is_none();
         let sticky = elem.sticky.get(styles);
         let breakable = elem.breakable.get(styles);
         let fr = match elem.height.get(styles) {
