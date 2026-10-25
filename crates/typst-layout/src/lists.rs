@@ -588,8 +588,12 @@ impl<'a> ItemLayouter<'a> {
         let mut frames = vec![];
         for (i, body_frame) in body_fragment.into_iter().enumerate() {
             let width = self.body_offset.x + body_frame.width();
-            let height = (marker.height() + self.marker_offset.y)
-                .max(body_frame.height() + self.body_offset.y);
+            let mut height = body_frame.height() + self.body_offset.y;
+            // The marker only contributes to the height of the frame it is
+            // placed in.
+            if i == self.first_frame {
+                height.set_max(marker.height() + self.marker_offset.y);
+            }
 
             let mut frame = Frame::soft(Size::new(width, height));
 
