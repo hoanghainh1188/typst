@@ -90,10 +90,10 @@ impl Drop for LazySvgElem<'_, '_> {
 }
 
 pub trait SvgWrite: Sized {
-    /// Write a string, escaping is handled by [`xmlwriter`].
+    /// Write a string, escaping is handled by the writer.
     fn push_str(&mut self, value: &str);
 
-    /// Write a character, escaping is handled by [`xmlwriter`].
+    /// Write a character, escaping is handled by the writer.
     fn push_char(&mut self, value: char) {
         self.push_str(value.encode_utf8(&mut [0; 4]));
     }
@@ -151,7 +151,22 @@ impl<'a, T> SvgFormatter<'a, T> {
 
 impl SvgWrite for SvgFormatter<'_, Vec<u8>> {
     fn push_str(&mut self, value: &str) {
-        self.buf.extend_from_slice(value.as_bytes());
+        // `xmlwriter` only escapes quotes in raw attribute values, so the
+        // other characters that are special in XML must be escaped here.
+        let mut rest = value;
+        while let Some(i) = rest.find(['&', '<', '>']) {
+            self.buf.extend_from_slice(rest[..i].as_bytes());
+            self.buf.extend_from_slice(
+                match rest.as_bytes()[i] {
+                    b'&' => "&amp;",
+                    b'<' => "&lt;",
+                    _ => "&gt;",
+                }
+                .as_bytes(),
+            );
+            rest = &rest[i + 1..];
+        }
+        self.buf.extend_from_slice(rest.as_bytes());
     }
 }
 
