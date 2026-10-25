@@ -23,19 +23,22 @@ pub(crate) enum GroupResult<'a> {
 ///
 /// The `closing` parameter indicates whether a closing delimiter follows the
 /// items. The `pad` parameter indicates whether, when linebreaks are present,
-/// the resulting rows should be padded to have the same length.
+/// the resulting rows should be padded to have the same length. The
+/// `keep_align` parameter indicates whether alignment points should be kept
+/// (yielding a single row) even if no linebreaks are present.
 pub(crate) fn process_group<'a, I>(
     items: I,
     styles: StyleChain<'a>,
     closing: bool,
     pad: bool,
+    keep_align: bool,
 ) -> GroupResult<'a>
 where
     I: IntoIterator<Item = RawMathItem<'a>>,
     I::IntoIter: ExactSizeIterator,
 {
     let preprocessed = preprocess(items, closing, false);
-    if preprocessed.linebreaks > 0 {
+    if preprocessed.linebreaks > 0 || (keep_align && preprocessed.has_align) {
         let mut row = Vec::new();
         let mut rows: Vec<_> = preprocessed
             .items
