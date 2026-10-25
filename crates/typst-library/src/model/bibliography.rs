@@ -1093,13 +1093,28 @@ fn render<'a>(
 
     if let Some(offset) = offset
         && let Some(bib) = &rendered.bibliography
-        // Check whether the style uses numbering.
-        && rendered.citations.iter().any(|rendered| {
+        // Check whether the style uses numbering, either in the citations or
+        // in the bibliography itself (the latter is relevant for full
+        // bibliographies without any citations).
+        && (rendered.citations.iter().any(|rendered| {
             rendered
                 .citation
                 .find_meta(&hayagriva::ElemMeta::CitationNumber)
                 .is_some()
-        })
+        }) || bib.items.iter().any(|item| {
+            item.content
+                .find_meta(&hayagriva::ElemMeta::CitationNumber)
+                .is_some()
+                || matches!(
+                    &item.first_field,
+                    Some(hayagriva::ElemChild::Elem(elem))
+                        if matches!(elem.meta, Some(hayagriva::ElemMeta::CitationNumber))
+                            || elem
+                                .children
+                                .find_meta(&hayagriva::ElemMeta::CitationNumber)
+                                .is_some()
+                )
+        }))
     {
         *offset += bib.items.len();
     }
